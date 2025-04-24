@@ -1,51 +1,28 @@
+# adapted from art_filter.py
 from transformers import CLIPProcessor, CLIPModel
 import torch
 import numpy as np
 import os
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from tqdm import tqdm
-from torch.utils.data import Dataset
+import os.path
+import sys
+from typing import Any, Callable, List, Optional, Tuple
+import tqdm
 from PIL import Image
-import json
-import os
-from torch.utils.data import DataLoader
-
-class SamCaptionDataset(Dataset):
-    def __init__(self, image_dir, caption_json, get_img=True, get_cap=True, transform=None):
-        self.image_dir = image_dir
-        self.get_img = get_img
-        self.get_cap = get_cap
-        self.transform = transform
-
-        # Load the JSON with { "image_id": "caption" }
-        with open(caption_json, "r") as f:
-            self.data = json.load(f)
-        self.ids = list(self.data.keys())
-
-    def __len__(self):
-        return len(self.ids)
-
-    def __getitem__(self, idx):
-        id = self.ids[idx]
-        sample = {"ids": id}
-
-        if self.get_img:
-            image_path = os.path.join(self.image_dir, f"{id}.jpg")  # or .png
-            image = Image.open(image_path).convert("RGB")
-            if self.transform:
-                image = self.transform(image)
-            sample["images"] = image
-
-        if self.get_cap:
-            caption = self.data[id]
-            sample["text"] = (caption,)
-
-        return sample
-
+from torch.utils.data import Dataset
+import pickle
+from torchvision import transforms
+from matplotlib import pyplot as plt
+import math
+import argparse
+import socket
+import time
+from sam import SamDataset
 
 class Caption_filter:
     def __init__(self, filter_prompts=["urbanism", "urban planning", "city", "cities", "architecture", "building", "highway", "bridge",
-                                       "home", "landmark", "pedestrian", "crosswalks", "apartment", "road", "street", "house", "urban", "neighborhood", "skyscraper",
+                                       "home", "landmark", "pedestrian", "crosswalks", "apartment", "road", "street", "house", "urban",
+                                       "neighborhood", "skyscraper", "tunnels"
                                        ],):
         self.filter_prompts = filter_prompts
         self.total_count=0
@@ -78,55 +55,56 @@ class Caption_filter:
             filter_result.append((filt, reason))
             self.total_count += 1
         return filter_result
-    
+
 class Clip_filter:
     prompt_threshold = {
-        "urbanism": 17,
-        "urban planning": 17.5,
-        "city": 19,
-        "cities": 15.8,
-        "architecture": 17,
+        "urbanism": 15,
+        "urban planning": 15,
+        "city": 15,
+        "cities": 15,
+        "architecture": 15,
         "buildings": 15,
-        "highways": 19.2,
-        "bridges": 20,
-        "homes": 16.3,
+        "highways": 15,
+        "bridges": 15,
+        "homes": 15,
         "landmarks": 15,
-        "pedestrian": 18,
-        "crosswalks": 19,
+        "pedestrian": 15,
+        "crosswalks": 15,
+        "tunnels": 15
     }
-    
-@torch.no_grad()
-def __init__(self, positive_prompt=["urbanism", "urban planning", "city", "cities", "architecture", "buildings", "highways", "bridges",
-                                    "homes", "landmarks", "pedestrian", "crosswalks"
-                                    ],
-              device="cuda"):
-    self.device = device
-    self.model = (CLIPModel.from_pretrained("openai/clip-vit-large-patch14")).to(device)
-    self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    self.positive_prompt = positive_prompt
-    self.text = self.positive_prompt
-    self.tokenizer = self.processor.tokenizer
-    self.image_processor = self.processor.image_processor
-    self.text_encoding = self.tokenizer(self.text, return_tensors="pt", padding=True).to(device)
-    self.text_features = self.model.get_text_features(**self.text_encoding)
-    self.text_features = self.text_features / self.text_features.norm(p=2, dim=-1, keepdim=True)
-@torch.no_grad()
-def similarity(self, image):
-    # inputs = self.processor(text=self.text, images=image, return_tensors="pt", padding=True)
-    image_processed = self.image_processor(image, return_tensors="pt", padding=True).to(self.device, non_blocking=True)
-    inputs = {**self.text_encoding, **image_processed}
-    outputs = self.model(**inputs)
-    logits_per_image = outputs.logits_per_image
-    return logits_per_image
+    @torch.no_grad()
+    def __init__(self, positive_prompt=["urbanism", "urban planning", "city", "cities", "architecture", "building", "highway", "bridge",
+                                          "home", "landmark", "pedestrian", "crosswalks", "apartment", "road", "street", "house", "urban",
+                                          "neighborhood", "skyscraper", "tunnels"
+                                        ],
+                  device="cuda"):
+        self.device = device
+        self.model = (CLIPModel.from_pretrained("openai/clip-vit-large-patch14")).to(device)
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+        self.positive_prompt = positive_prompt
+        self.text = self.positive_prompt
+        self.tokenizer = self.processor.tokenizer
+        self.image_processor = self.processor.image_processor
+        self.text_encoding = self.tokenizer(self.text, return_tensors="pt", padding=True).to(device)
+        self.text_features = self.model.get_text_features(**self.text_encoding)
+        self.text_features = self.text_features / self.text_features.norm(p=2, dim=-1, keepdim=True)
+    @torch.no_grad()
+    def similarity(self, image):
+        # inputs = self.processor(text=self.text, images=image, return_tensors="pt", padding=True)
+        image_processed = self.image_processor(image, return_tensors="pt", padding=True).to(self.device, non_blocking=True)
+        inputs = {**self.text_encoding, **image_processed}
+        outputs = self.model(**inputs)
+        logits_per_image = outputs.logits_per_image
+        return logits_per_image
 
-def get_logits(self, image):
-    logits_per_image = self.similarity(image)
-    return logits_per_image.cpu()
+    def get_logits(self, image):
+        logits_per_image = self.similarity(image)
+        return logits_per_image.cpu()
 
-def get_image_features(self, image):
-    image_processed = self.image_processor(image, return_tensors="pt", padding=True).to(self.device, non_blocking=True)
-    image_features = self.model.get_image_features(**image_processed)
-    return image_features
+    def get_image_features(self, image):
+        image_processed = self.image_processor(image, return_tensors="pt", padding=True).to(self.device, non_blocking=True)
+        image_features = self.model.get_image_features(**image_processed)
+        return image_features
 
 class Urban_filter:
     def __init__(self):
@@ -207,30 +185,16 @@ class Urban_filter:
         logit_scale = self.clip_filter.model.logit_scale.exp()
         logits = ((feature @ self.clip_filter.text_features.T) * logit_scale).cpu()
         return {"clip_logits":logits, "text": self.clip_filter.text}
-    
+
 if __name__ == "__main__":
     import pickle
-    dataset = SamCaptionDataset(
-    image_dir="/path/to/sam/images",
-    caption_json="/path/to/captions.json",
-)
-
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
-    # with open("/vision-nfs/torralba/scratch/jomat/sam_dataset/filt_result/sa_000000/clip_logits_result.pickle","rb") as f:
-    #     result=pickle.load(f)
-    # feat = result['clip_features']
-
-    urban_filter = Urban_filter()
-
-    # Filter based on captions
-    caption_filter_results = urban_filter.caption_filt(dataloader)
-    print(caption_filter_results)
-
-    # Filter based on CLIP visual logits
-    clip_logit_results = urban_filter.clip_logit(dataloader)
-    clip_filter_results = urban_filter.clip_filt(clip_logit_results)
-    print(clip_filter_results)
-    
-    # logits = Urban_filter().clip_logit_by_feat(dataloader)
-    # print(logits)
-
+    # need to pass in dataloader for SAM from sam.py in custom_datasets
+    # sam_filt(caption_filt=False, clip_filt=False, clip_logit=True)
+    # from custom_datasets.sam_caption.mypath import MyPath
+    dataset = SamDataset(image_folder_path="sam_images", caption_folder_path="", id_file="sam_whole_filtered_ids_train", id_dict_file="sam_id_dict")
+    dataset.get_img = False
+    for i in tqdm.tqdm(dataset):
+        a=i['text']
+    # do we need this? 
+    logits = Urban_filter().clip_logit(dataset)
+    print(logits)

@@ -6,7 +6,8 @@ from torchvision import transforms
 from accelerate import Accelerator
 from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from transformers import BertTokenizer, BertModel
-from custom_datasets.sam_dataset import SamDataset
+# from custom_datasets.sam_dataset import SamDataset
+from sam import SamDataset
 from tqdm.auto import tqdm
 
 MODEL_NAME = "CompVis/stable-diffusion-v1-4"

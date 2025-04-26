@@ -107,7 +107,7 @@ def main():
             pixel_values = batch["image"].to(device)
             with torch.no_grad():
                 latents = vae.module.encode(pixel_values).latent_dist.sample()
-                latents = latents * vae.config.scaling_factor
+                latents = latents * vae.module.config.scaling_factor
             caps = batch["caption"]
             txt = tokenizer(
                 caps,

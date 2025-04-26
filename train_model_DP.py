@@ -1,23 +1,6 @@
 import os
 import argparse
 from pathlib import Path
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import transforms
-from tqdm.auto import tqdm
-
-from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
-from transformers import BertTokenizer, BertModel
-
-from dataset import get_dataloader
-
-# ─── CONSTANTS ────────────────────────────────────────────────────────────────
-MODEL_NAME   = "CompVis/stable-diffusion-v1-4"
-TEXT_ENCODER = "bert-base-uncased"
-# ────────────────────────────────────────────────────────────────────────────────
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Multi-GPU training of SD1.4 UNet (reinitialized, DataParallel)"
@@ -65,12 +48,32 @@ def parse_args():
         help="Image resolution for training (square)",
     )
     return parser.parse_args()
+args=parse_args()
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+num_gpus = len(args.gpus.split(","))
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision import transforms
+from tqdm.auto import tqdm
+
+from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
+from transformers import BertTokenizer, BertModel
+
+from dataset import get_dataloader
+
+
+# ─── CONSTANTS ────────────────────────────────────────────────────────────────
+MODEL_NAME   = "CompVis/stable-diffusion-v1-4"
+TEXT_ENCODER = "bert-base-uncased"
+# ────────────────────────────────────────────────────────────────────────────────
 def main():
-    args = parse_args()
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-    num_gpus = len(args.gpus.split(","))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using GPUs {args.gpus} → DataParallel device_ids = {list(range(num_gpus))}")
+    print("cuda.device_count() →", torch.cuda.device_count())
+    for i in range(torch.cuda.device_count()):
+        print(f"  visible GPU {i}: {torch.cuda.get_device_name(i)}")
     vae = AutoencoderKL.from_pretrained(MODEL_NAME, subfolder="vae").to(device)
     vae=nn.DataParallel(vae, device_ids=list(range(num_gpus)))
     vae.requires_grad_(False)
@@ -78,8 +81,7 @@ def main():
     pretrained_unet = UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet")
     config = pretrained_unet.config
     del pretrained_unet
-    unet = UNet2DConditionModel.from_config(config)
-    unet.to(device)
+    unet = UNet2DConditionModel.from_config(config).to(device)
     unet = nn.DataParallel(unet, device_ids=list(range(num_gpus)))
     tokenizer    = BertTokenizer.from_pretrained(TEXT_ENCODER)
     text_encoder = BertModel.from_pretrained(TEXT_ENCODER).to(device)

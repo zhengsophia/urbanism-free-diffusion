@@ -5,8 +5,8 @@
 #SBATCH --partition=vision-torralba
 #SBATCH --qos=vision-torralba-main
 #SBATCH --time=99:00:00
-#SBATCH --output=/vision-nfs/torralba/scratch/apprisco/logs/job_output_%j.log
-#SBATCH --error=/vision-nfs/torralba/scratch/apprisco/NeuroContrast/logs/job_output_%j.log
+#SBATCH --output=/data/scratch/apprisco/logs/job_output_%j.log
+#SBATCH --error=/data/scratch/apprisco/logs/job_output_%j.log
 #SBATCH --gres=gpu:rtx_3090:7
 #SBATCH --cpus-per-gpu=8
 #SBATCH --mem=192G
@@ -16,10 +16,10 @@ trap 'scontrol requeue $SLURM_JOB_ID' SIGTERM
 
 source /data/vision/torralba/scratch/apprisco/.bashrc
 conda activate AWQ
-cd /vision-nfs/torralba/scratch/apprisco/
+cd /data/vision/torralba/selfmanaged/torralba/scratch/apprisco
+echo $(pwd)
 echo "My Job ID is $SLURM_JOB_ID"
 echo "The time is $(date)"
 echo "This job is running on $(hostname)"
 echo $(pwd)
-
 torchrun --nproc_per_node=7 train_model_DDP.py   --topic filtered   --batch-size 8   --num-workers 8   --epochs 20   --lr 5e-5   --resolution 256

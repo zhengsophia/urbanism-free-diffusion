@@ -7,10 +7,9 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-git pull
 job_id=$(sbatch --parsable rest.sbatch)
 echo "Submitted job $job_id"
-log_path="/vision-nfs/torralba/scratch/apprisco/logs/job_output_${job_id}.log"
+log_path="/data/scratch/apprisco/logs/job_output_${job_id}.log"
 echo "Waiting for output log at $log_path..."
 while [ ! -f "$log_path" ]; do
     sleep 3

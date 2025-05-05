@@ -133,7 +133,7 @@ def main():
             optimizer.step()
             total_loss += loss.item()
             if rank == 0:
-                iterator.set_postfix(avg_loss=total_loss / (it.n + 1))
+                iterator.set_postfix(avg_loss=total_loss / (iterator.n + 1))
         if rank == 0:
             avg = total_loss / len(loader)
             print(f"Epoch {epoch} complete — avg loss: {avg:.4f}")

@@ -114,22 +114,26 @@ def main():
                 ).last_hidden_state
 
             noise = torch.randn_like(latents)
-            scheduler.set_timesteps(1000)  # ensure correct timesteps
-            for t in scheduler.timesteps:
-                noisy = scheduler.add_noise(latents, noise, t)
-                pred = unet(
-                    noisy,
-                    t,
-                    encoder_hidden_states=enc_states,
-                    return_dict=False
-                )[0]
-                loss = F.mse_loss(pred.float(), noise.float(), reduction="mean")
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+            timesteps = torch.randint(
+                0,
+                scheduler.config.num_train_timesteps,
+                (latents.shape[0],),
+                device=device
+            ).long()
+            noisy = scheduler.add_noise(latents, noise, timesteps)
+            pred = unet(
+                noisy,
+                timesteps,
+                encoder_hidden_states=enc_states,
+                return_dict=False
+            )[0]
+            loss = F.mse_loss(pred.float(), noise.float(), reduction="mean")
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
             total_loss += loss.item()
             if rank == 0:
-                iterator.set_postfix(avg_loss=total_loss / (iterator.n + 1))
+                it.set_postfix(avg_loss=total_loss / (it.n + 1))
         if rank == 0:
             avg = total_loss / len(loader)
             print(f"Epoch {epoch} complete — avg loss: {avg:.4f}")

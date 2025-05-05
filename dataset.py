@@ -78,7 +78,7 @@ def get_finetuneloader(
 ) -> DataLoader:
     ids_pkl = Path("SamDataset/ids/{topic}_ids.pkl")
     ds = SA1BDatasetFinetune(
-        ids_pkl=Path(f"SamDataset/ids/filtered_ids.pkl")
+        ids_pkl=Path(f"SamDataset/ids/filtered_ids.pkl"),
         ids_pkl2=ids_pkl,
         transform=transform,
     )

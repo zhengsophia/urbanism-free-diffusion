@@ -56,7 +56,7 @@ def main():
     lora_config = LoraConfig(
         r=16,
         lora_alpha=16,
-        target_modules=["q_proj", "v_proj", "proj_out"],
+        target_modules=["to_q","to_k","to_v","to_out.0"],
         lora_dropout=0.05,
         bias="none"
     )

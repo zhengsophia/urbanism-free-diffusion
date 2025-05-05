@@ -33,7 +33,11 @@ class SA1BDataset(Dataset):
         cap_path = self.cap_dir/f"{sa_id}.txt"
         caption = cap_path.read_text(encoding="utf-8").strip()
         return {"id": sa_id, "image": image, "caption": caption}
-        
+def sample_fraction(items: List, fraction: float = 0.5, seed: int = None) -> List:
+    if seed is not None:
+        random.seed(seed)
+    k = int(len(items) * fraction)
+    return random.sample(items, k)
 class SA1BDatasetFinetune(SA1BDataset):
     def __init__(
         self,
@@ -41,7 +45,7 @@ class SA1BDatasetFinetune(SA1BDataset):
         ids_pkl2: Path,
         transform: Optional[transforms.Compose] = None,
     ):
-        self.ids = pickle.load(open(ids_pkl, "rb"))+pickle.load(open(ids_pkl2, "rb"))
+        self.ids = sample_fraction(pickle.load(open(ids_pkl, "rb")),238)+pickle.load(open(ids_pkl2, "rb"))
         self.img_dir = Path("SamDataset/images/")
         self.cap_dir = Path("SamDataset/captions/")
         self.transform = transform or transforms.Compose([

@@ -1,4 +1,5 @@
 import pickle
+import random
 from pathlib import Path
 from typing import Optional
 
@@ -33,7 +34,7 @@ class SA1BDataset(Dataset):
         cap_path = self.cap_dir/f"{sa_id}.txt"
         caption = cap_path.read_text(encoding="utf-8").strip()
         return {"id": sa_id, "image": image, "caption": caption}
-def sample_fraction(items: List, fraction: float = 0.5, seed: int = None) -> List:
+def sample_fraction(items, fraction = 0.5, seed = 12):
     if seed is not None:
         random.seed(seed)
     k = int(len(items) * fraction)

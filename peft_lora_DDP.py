@@ -58,8 +58,7 @@ def main():
         lora_alpha=16,
         target_modules=["q_proj", "v_proj", "proj_out"],
         lora_dropout=0.05,
-        bias="none",
-        task_type="DEFAULT"
+        bias="none"
     )
     unet = get_peft_model(base_unet, lora_config).to(device)
     unet = DDP(unet, device_ids=[local_rank], output_device=local_rank)

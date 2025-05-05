@@ -46,7 +46,7 @@ class SA1BDatasetFinetune(SA1BDataset):
         ids_pkl2: Path,
         transform: Optional[transforms.Compose] = None,
     ):
-        self.ids = sample_fraction(pickle.load(open(ids_pkl, "rb")),238)+pickle.load(open(ids_pkl2, "rb"))
+        self.ids = sample_fraction(pickle.load(open(ids_pkl, "rb")),0.5,238)+pickle.load(open(ids_pkl2, "rb"))
         self.img_dir = Path("SamDataset/images/")
         self.cap_dir = Path("SamDataset/captions/")
         self.transform = transform or transforms.Compose([

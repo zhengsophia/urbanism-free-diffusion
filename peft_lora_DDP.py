@@ -72,7 +72,7 @@ def main():
         transforms.Resize((args.resolution, args.resolution)),
         transforms.ToTensor(),
     ])
-    ids_pkl = Path(f"SamDataset/ids/filtered_ids.pkl")
+    ids_pkl = Path("SamDataset/ids/filtered_ids.pkl")
     ids_pkl2 = Path(f"SamDataset/ids/{args.topic}_ids.pkl")
     dataset = SA1BDatasetFinetune(ids_pkl=ids_pkl, ids_pkl2=ids_pkl2, transform=transform)
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True)

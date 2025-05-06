@@ -13,7 +13,7 @@ from tqdm.auto import tqdm
 from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from transformers import BertTokenizer, BertModel
 
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, PeftModel
 
 from dataset import SA1BDatasetFinetune
 
@@ -62,9 +62,10 @@ def main():
         lora_dropout=0.05,
         bias="none"
     )
-    unet = get_peft_model(base_unet, lora_config).to(device)
     if args.load:
-        pass
+        unet = PeftModel.from_pretrained(base_unet, f"lora_{args.load}/epoch_5")
+    else:
+        unet = get_peft_model(base_unet, lora_config).to(device)
     unet = DDP(unet, device_ids=[local_rank], output_device=local_rank)
     tokenizer    = BertTokenizer.from_pretrained(TEXT_ENCODER)
     text_encoder = BertModel.from_pretrained(TEXT_ENCODER).to(device)

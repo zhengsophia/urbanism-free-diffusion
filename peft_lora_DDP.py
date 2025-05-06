@@ -34,7 +34,7 @@ def parse_args():
                    help="Learning rate")
     p.add_argument("--resolution",  type=int,   default=512,
                    help="Image resolution (square)")
-    p.add_argument("--load",  type=str,   default="none",
+    p.add_argument("--load",  type=str,   default=None,
                    help="existing lora adapter to load")
     return p.parse_args()
 

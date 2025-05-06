@@ -63,7 +63,7 @@ def main():
         bias="none"
     )
     if args.load:
-        unet = PeftModel.from_pretrained(base_unet, f"lora_{args.load}/epoch_5")
+        unet = PeftModel.from_pretrained(base_unet, f"lora_{args.load}/epoch_5",is_trainable=True).to(device)
     else:
         unet = get_peft_model(base_unet, lora_config).to(device)
     unet = DDP(unet, device_ids=[local_rank], output_device=local_rank)

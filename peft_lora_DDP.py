@@ -36,6 +36,8 @@ def parse_args():
                    help="Image resolution (square)")
     p.add_argument("--load",  type=str,   default=None,
                    help="existing lora adapter to load")
+    p.add_argument("--ids",  type=str,   default=None,
+                   help="existing lora adapter datasets to load")
     return p.parse_args()
 
 def main():
@@ -63,7 +65,7 @@ def main():
         bias="none"
     )
     if args.load:
-        unet = PeftModel.from_pretrained(base_unet, f"lora_{args.load}/epoch_5",is_trainable=True).to(device)
+        unet = PeftModel.from_pretrained(base_unet, f"lora_{args.load}/epoch_5", is_trainable=True).to(device)
     else:
         unet = get_peft_model(base_unet, lora_config).to(device)
     unet = DDP(unet, device_ids=[local_rank], output_device=local_rank)
@@ -76,9 +78,12 @@ def main():
         transforms.Resize((args.resolution, args.resolution)),
         transforms.ToTensor(),
     ])
-    ids_pkl = Path("SamDataset/ids/filtered_ids.pkl")
-    ids_pkl2 = Path(f"SamDataset/ids/{args.topic}_ids.pkl")
-    dataset = SA1BDatasetFinetune(ids_pkl=ids_pkl, ids_pkl2=ids_pkl2, transform=transform)
+    ids=[]
+    if args.ids!=None:
+        for id in args.ids.split(','):
+            ids.append(Path(f"SamDataset/ids/{id}_ids.pkl"))
+    ids_pkl = Path(f"SamDataset/ids/{args.topic}_ids.pkl")
+    dataset = SA1BDatasetFinetune(ids_pkl=ids_pkl, ids_pkl2=ids, transform=transform)
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True)
     loader  = DataLoader(
         dataset,

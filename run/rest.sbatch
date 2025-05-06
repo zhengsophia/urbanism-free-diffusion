@@ -22,4 +22,9 @@ echo "My Job ID is $SLURM_JOB_ID"
 echo "The time is $(date)"
 echo "This job is running on $(hostname)"
 echo $(pwd)
-torchrun --nproc_per_node=7 train_model_DDP.py   --topic filtered   --batch-size 8   --num-workers 8   --epochs 20   --lr 5e-5   --resolution 256
+#torchrun --nproc_per_node=7 train_model_DDP.py   --topic filtered   --batch-size 8   --num-workers 8   --epochs 20   --lr 5e-5   --resolution 256
+#torchrun --nproc_per_node=7 peft_lora_DDP.py --topic road --resolution 256 --batch-size 32 --num-workers 8 --epochs 5 --ids filtered
+torchrun --nproc_per_node=7 peft_lora_DDP.py --topic vehicle --resolution 256 --batch-size 32 --num-workers 8 --epochs 5 --load road  --ids filtered,road
+torchrun --nproc_per_node=7 peft_lora_DDP.py --topic building --resolution 256 --batch-size 32 --num-workers 8 --epochs 5 --load vehicle --ids filtered,road,vehicle
+torchrun --nproc_per_node=7 peft_lora_DDP.py --topic city --resolution 256 --batch-size 32 --num-workers 8 --epochs 5 --load building --ids filtered,road,vehicle,building
+torchrun --nproc_per_node=7 peft_lora_DDP.py --topic urban --resolution 256 --batch-size 32 --num-workers 8 --epochs 5 --load city --ids filtered,road,vehicle,building,city

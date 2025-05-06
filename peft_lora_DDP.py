@@ -34,6 +34,8 @@ def parse_args():
                    help="Learning rate")
     p.add_argument("--resolution",  type=int,   default=512,
                    help="Image resolution (square)")
+    p.add_argument("--load",  type=str,   default="none",
+                   help="existing lora adapter to load")
     return p.parse_args()
 
 def main():
@@ -61,6 +63,8 @@ def main():
         bias="none"
     )
     unet = get_peft_model(base_unet, lora_config).to(device)
+    if args.load:
+        pass
     unet = DDP(unet, device_ids=[local_rank], output_device=local_rank)
     tokenizer    = BertTokenizer.from_pretrained(TEXT_ENCODER)
     text_encoder = BertModel.from_pretrained(TEXT_ENCODER).to(device)
@@ -84,7 +88,7 @@ def main():
         drop_last=True,
     )
     optimizer = torch.optim.AdamW(unet.parameters(), lr=args.lr)
-    checkpoint_root = Path("ckpt_lora")
+    checkpoint_root = Path(f"lora_{args.topic}")
     for epoch in range(1, args.epochs + 1):
         sampler.set_epoch(epoch)
         unet.train()

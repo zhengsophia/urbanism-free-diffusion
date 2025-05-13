@@ -5,14 +5,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List, Dict, Tuple
 
 # ─── DEFINE YOUR TOPICS IN ORDER (most specific first) ────────────────────────
-# For example, vehicles are more specific than roads, so list them first.
 TOPIC_SEQUENCE: List[Tuple[str, List[str]]] = [
     ("vehicle",  ["vehicle", "car", "truck", "bus", "plane", "bicycle", "motorcycle", "scooter", "moped", "train", "tram", "pedestrian"]),
-    ("road",     ["road", "highway", "street", "sidewalk", "runway", "driveway", "crosswalk", "bridge", "tunnels"]),
+    ("road",     ["road", "highway", "street", "sidewalk", "runway", "driveway", "crosswalk", "tunnels"]),
     ("building", ["building", "skyscraper", "house", "apartment", "condo", "mansion", "airport"]),
-    ("city",     ["village", "city", "metropolis", "cities", "downtown", "town", "suburb", "cosmopolis"]),
+    ("city",     ["village", "city", "metropolis", "cities", "downtown", "town", "suburb", "cosmopolis", "bridge"]),
     ("urban",    ["urban", "architecture", "cityscape", "municipal"]),
-    # …add more categories here…
 ]
 # ────────────────────────────────────────────────────────────────────────────────
 

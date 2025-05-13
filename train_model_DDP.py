@@ -61,6 +61,7 @@ def main():
     scheduler = DDPMScheduler.from_pretrained(MODEL_NAME, subfolder="scheduler")
     transform = transforms.Compose([
         transforms.Resize((args.resolution, args.resolution)),
+        transforms.Normalize([0.5], [0.5]),
         transforms.ToTensor(),
     ])
     ids_pkl = Path(f"SamDataset/ids/{args.topic}_ids.pkl")
